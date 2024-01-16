@@ -486,9 +486,16 @@ func ToCell(v any) (*cell.Cell, error) {
 			types := strings.Split(allowed, ",")
 
 			t := fieldVal.Elem().Type()
+			fieldStructName := t.Name()
+			if fieldStructName == "" && t.Kind() == reflect.Pointer {
+				pointerName := t.String()
+				if len(pointerName) > 5 && pointerName[:5] == "*tlb." {
+					fieldStructName = pointerName[5:]
+				}
+			}
 			found := false
 			for _, typ := range types {
-				if t.Name() == typ {
+				if fieldStructName == typ {
 					found = true
 					break
 				}

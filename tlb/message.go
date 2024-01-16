@@ -24,7 +24,8 @@ type AnyMessage interface {
 
 type Message struct {
 	MsgType MsgType    `tlb:"-"`
-	Msg     AnyMessage `tlb:"."`
+	Msg     AnyMessage `tlb:"[InternalMessage,ExternalMessage,ExternalMessageOut]"`
+	//Msg     AnyMessage `tlb:"."`
 }
 
 type MessagesList struct {

@@ -125,11 +125,14 @@ func (c *APIClient) WaitForBlock(seqno uint32) APIClientWrapped {
 	}
 }
 
+const DefaultAPIClientMaxTries = 100
+const InfiniteAPIClientRetries = 0
+
 // WithRetry - automatically retires request to another available liteserver
 // when adnl timeout, or error code 651 or -400 is received.
 // If maxTries > 0, limits additional attempts to this number.
 func (c *APIClient) WithRetry(maxTries ...int) APIClientWrapped {
-	tries := 0
+	tries := DefaultAPIClientMaxTries
 	if len(maxTries) > 0 {
 		tries = maxTries[0]
 	}
