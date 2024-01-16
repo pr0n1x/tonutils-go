@@ -127,6 +127,9 @@ func (c *APIClient) WaitForBlock(seqno uint32) APIClientWrapped {
 	}
 }
 
+const DefaultAPIClientMaxTries = 100
+const InfiniteAPIClientRetries = 0
+
 // WithRetry
 // If maxTries = 0
 //
@@ -137,7 +140,7 @@ func (c *APIClient) WaitForBlock(seqno uint32) APIClientWrapped {
 //
 //	Limits additional attempts to this number.
 func (c *APIClient) WithRetry(maxTries ...int) APIClientWrapped {
-	tries := 0
+	tries := DefaultAPIClientMaxTries
 	if len(maxTries) > 0 {
 		tries = maxTries[0]
 	}

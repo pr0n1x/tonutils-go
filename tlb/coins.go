@@ -18,6 +18,10 @@ type Coins struct {
 
 var ZeroCoins = MustFromTON("0")
 
+func (g Coins) Decimals() int {
+	return g.decimals
+}
+
 // Deprecated: use String
 func (g Coins) TON() string {
 	return g.String()
