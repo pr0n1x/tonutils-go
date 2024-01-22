@@ -224,7 +224,7 @@ type Transaction struct {
 	EndStatus   AccountStatus `tlb:"."`
 	IO          struct {
 		In  *Message      `tlb:"maybe ^"`
-		Out *MessagesList `tlb:"maybe ^"`
+		Out *MessagesList `tlb:"."`
 	} `tlb:"^"`
 	TotalFees   CurrencyCollection     `tlb:"."`
 	StateUpdate HashUpdate             `tlb:"^"` // of Account
