@@ -34,7 +34,7 @@ type Message struct {
 }
 
 type MessagesList struct {
-	List *cell.Dictionary `tlb:"dict inline 15"`
+	List *cell.Dictionary `tlb:"dict 15"`
 }
 
 type InternalMessage struct {
