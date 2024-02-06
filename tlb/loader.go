@@ -66,9 +66,12 @@ func loadFromCell(v any, slice *cell.Slice, skipProofBranches, skipMagic bool) e
 		return nil
 	}
 
+	eitherSelections := make(map[string]bool)
+
 	for i := 0; i < rv.NumField(); i++ {
 		loader := slice
-		structField := rv.Type().Field(i)
+		thisStruct := rv.Type()
+		structField := thisStruct.Field(i)
 		parseType := structField.Type
 		tag := strings.TrimSpace(structField.Tag.Get("tlb"))
 		if tag == "-" {
@@ -130,7 +133,7 @@ func loadFromCell(v any, slice *cell.Slice, skipProofBranches, skipMagic bool) e
 			if err != nil {
 				return fmt.Errorf("failed to load maybe for %s, err: %w", structField.Name, err)
 			}
-
+			eitherSelections[structField.Name] = isSecond
 			if !isSecond {
 				settings = []string{settings[0]}
 			} else {
@@ -401,6 +404,17 @@ func loadFromCell(v any, slice *cell.Slice, skipProofBranches, skipMagic bool) e
 			} else {
 				panic("var of type " + settings[1] + " is not supported")
 			}
+		} else if settings[0] == "matched-either-of" {
+			if structField.Type.Name() != "bool" {
+				panic(fmt.Sprintf("field '%s' annotated with 'matched-either-of tag have to be boolean", structField.Name))
+			}
+			if len(settings) < 2 || len(settings[1]) < 1 {
+				panic(fmt.Sprintf("field '%s' annotated with 'matched-either-of' requires argument containing field annotated with 'either' tag", structField.Name))
+			}
+
+			isSecond, eitherSelectionExist := eitherSelections[settings[1]]
+			setVal(reflect.ValueOf(eitherSelectionExist && isSecond))
+			continue
 		}
 
 		panic(fmt.Sprintf("cannot deserialize field '%s' as tag '%s'", structField.Name, tag))
@@ -455,6 +469,28 @@ func ToCell(v any) (*cell.Cell, error) {
 	}
 
 	root := cell.BeginCell()
+	var _eitherSelections map[string]bool
+	getEitherSelections := func() map[string]bool {
+		if _eitherSelections == nil {
+			_eitherSelections = make(map[string]bool)
+			for i := 0; i < rv.NumField(); i++ {
+				structField := rv.Type().Field(i)
+				tag := strings.TrimSpace(structField.Tag.Get("tlb"))
+				settings := strings.Split(tag, " ")
+				if settings[0] == "matched-either-of" {
+					if structField.Type.Name() != "bool" {
+						panic(fmt.Sprintf("field '%s' annotated with 'matched-either-of tag have to be boolean", structField.Name))
+					}
+					if len(settings) < 2 || len(settings[1]) < 1 {
+						panic(fmt.Sprintf("field '%s' annotated with 'matched-either-of' requires argument containing field annotated with 'either' tag", structField.Name))
+					}
+					fieldVal := rv.Field(i)
+					_eitherSelections[settings[1]] = fieldVal.Bool()
+				}
+			}
+		}
+		return _eitherSelections
+	}
 
 next:
 	for i := 0; i < rv.NumField(); i++ {
@@ -467,7 +503,7 @@ next:
 		}
 		settings := strings.Split(tag, " ")
 
-		if len(settings) == 0 {
+		if len(settings) == 0 || settings[0] == "matched-either-of" {
 			continue
 		}
 
@@ -539,8 +575,15 @@ next:
 				}
 			}
 
+			// check: "either" bit could've been saved to separate boolean field
+			startFromEitherBranch := uint8(0)
+			eitherSelections := getEitherSelections()
+			if useSecond, ok := eitherSelections[structField.Name]; ok && useSecond {
+				startFromEitherBranch = 1
+			}
+
 			// we try first option, if it is overflows then we try second
-			for x := 0; x < 2; x++ {
+			for x := startFromEitherBranch; x < 2; x++ {
 				builder := cell.BeginCell()
 				if err := storeField([]string{settings[x]}, builder, structField, fieldVal, parseType); err != nil {
 					return nil, fmt.Errorf("failed to serialize field %s to cell as either %d: %w", structField.Name, x, err)

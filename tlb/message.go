@@ -53,6 +53,9 @@ type InternalMessage struct {
 
 	StateInit *StateInit `tlb:"maybe either leave 1,1 . ^"`
 	Body      *cell.Cell `tlb:"either . ^"`
+
+	StateInitForceRef bool `tlb:"matched-either-of StateInit"`
+	BodyForceRef      bool `tlb:"matched-either-of Body"`
 }
 
 type ExternalMessage struct {
@@ -63,6 +66,9 @@ type ExternalMessage struct {
 
 	StateInit *StateInit `tlb:"maybe either leave 1,1 . ^"`
 	Body      *cell.Cell `tlb:"either . ^"`
+
+	StateInitForceRef bool `tlb:"matched-either-of StateInit"`
+	BodyForceRef      bool `tlb:"matched-either-of Body"`
 }
 
 type ExternalMessageOut struct {
@@ -74,6 +80,9 @@ type ExternalMessageOut struct {
 
 	StateInit *StateInit `tlb:"maybe either leave 1,1 . ^"`
 	Body      *cell.Cell `tlb:"either . ^"`
+
+	StateInitForceRef bool `tlb:"matched-either-of StateInit"`
+	BodyForceRef      bool `tlb:"matched-either-of Body"`
 }
 
 func (m *InternalMessage) Payload() *cell.Cell {
