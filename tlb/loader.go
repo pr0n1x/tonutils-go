@@ -61,6 +61,8 @@ func loadFromCell(v any, slice *cell.Slice, skipProofBranches, skipMagic bool) e
 		return nil
 	}
 
+	eitherSelections := make(map[string]bool)
+
 	for i := 0; i < rv.NumField(); i++ {
 		loader := slice
 		structField := rv.Type().Field(i)
@@ -113,7 +115,7 @@ func loadFromCell(v any, slice *cell.Slice, skipProofBranches, skipMagic bool) e
 			if err != nil {
 				return fmt.Errorf("failed to load maybe for %s, err: %w", structField.Name, err)
 			}
-
+			eitherSelections[structField.Name] = isSecond
 			if !isSecond {
 				settings = []string{settings[1]}
 			} else {
@@ -347,6 +349,17 @@ func loadFromCell(v any, slice *cell.Slice, skipProofBranches, skipMagic bool) e
 			} else {
 				panic("var of type " + settings[1] + " is not supported")
 			}
+		} else if settings[0] == "matched-either-of" {
+			if structField.Type.Name() != "bool" {
+				panic(fmt.Sprintf("field '%s' annotated with 'matched-either-of tag have to be boolean", structField.Name))
+			}
+			if len(settings) < 2 {
+				panic(fmt.Sprintf("field '%s' annotated with 'matched-either-of' requires argument containing field annotated with 'either' tag", structField.Name))
+			}
+
+			isSecond, eitherSelectionExist := eitherSelections[settings[1]]
+			setVal(reflect.ValueOf(eitherSelectionExist && isSecond))
+			continue
 		}
 
 		panic(fmt.Sprintf("cannot deserialize field '%s' as tag '%s'", structField.Name, tag))
@@ -486,16 +499,16 @@ func ToCell(v any) (*cell.Cell, error) {
 			types := strings.Split(allowed, ",")
 
 			t := fieldVal.Elem().Type()
-			fieldStructName := t.Name()
-			if fieldStructName == "" && t.Kind() == reflect.Pointer {
-				pointerName := t.String()
-				if len(pointerName) > 5 && pointerName[:5] == "*tlb." {
-					fieldStructName = pointerName[5:]
+			fieldTypeStructName := t.Name()
+			if fieldTypeStructName == "" && t.Kind() == reflect.Pointer {
+				pointerType := t.String()
+				if len(pointerType) > 5 && pointerType[:5] == "*tlb." {
+					fieldTypeStructName = pointerType[5:]
 				}
 			}
 			found := false
 			for _, typ := range types {
-				if fieldStructName == typ {
+				if fieldTypeStructName == typ {
 					found = true
 					break
 				}
