@@ -21,12 +21,12 @@ const (
 )
 
 type Account struct {
-	IsActive   bool
-	State      *AccountState
-	Data       *cell.Cell
-	Code       *cell.Cell
-	LastTxLT   uint64
-	LastTxHash []byte
+	IsActive   bool          `tlb:"bool"`
+	State      *AccountState `tlb:"."`
+	Data       *cell.Cell    `tlb:"^"`
+	Code       *cell.Cell    `tlb:"^"`
+	LastTxLT   uint64        `tlb:"## 64"`
+	LastTxHash []byte        `tlb:"bits 256"`
 }
 
 type CurrencyCollection struct {
@@ -162,6 +162,31 @@ func (a *AccountState) LoadFromCell(loader *cell.Slice) error {
 	return nil
 }
 
+func (a *AccountState) ToCell() (*cell.Cell, error) {
+	builder := cell.BeginCell()
+	if err := builder.StoreBoolBit(a.IsValid); err != nil {
+		return nil, err
+	}
+	if err := builder.StoreAddr(a.Address); err != nil {
+		return nil, err
+	}
+	storageInfoCell, err := ToCell(a.StorageInfo)
+	if err != nil {
+		return nil, err
+	}
+	storageCell, err := ToCell(a.AccountStorage)
+	if err != nil {
+		return nil, err
+	}
+	if err := builder.StoreBuilder(storageInfoCell.ToBuilder()); err != nil {
+		return nil, err
+	}
+	if err := builder.StoreBuilder(storageCell.ToBuilder()); err != nil {
+		return nil, err
+	}
+	return builder.EndCell(), nil
+}
+
 func (s *AccountStorage) LoadFromCell(loader *cell.Slice) error {
 	lastTransaction, err := loader.LoadUInt(64)
 	if err != nil {
@@ -213,6 +238,14 @@ func (s *AccountStorage) LoadFromCell(loader *cell.Slice) error {
 	s.Balance = FromNanoTON(coins)
 
 	return nil
+}
+
+// ToCell
+// TODO: implement AccountStorage.ToCell
+//
+//goland:noinspection GoMixedReceiverTypes
+func (s AccountStorage) ToCell() (*cell.Cell, error) {
+	return nil, fmt.Errorf("TODO: implement AccountStorage::ToCell")
 }
 
 func (a *Account) HasGetMethod(name string) bool {

@@ -235,19 +235,24 @@ func parseFlags(data byte) flags {
 	}
 }
 
+var (
+	ErrIncorrectAddressData = errors.New("incorrect address data")
+	ErrInvalidAddress       = errors.New("invalid address")
+)
+
 func ParseAddr(addr string) (*Address, error) {
 	data, err := base64.RawURLEncoding.DecodeString(addr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", ErrIncorrectAddressData, err)
 	}
 
 	if len(data) != 36 {
-		return nil, errors.New("incorrect address data")
+		return nil, ErrIncorrectAddressData
 	}
 
 	checksum := data[len(data)-2:]
 	if crc16.Checksum(data[:len(data)-2], crc16.MakeTable(crc16.CRC16_XMODEM)) != binary.BigEndian.Uint16(checksum) {
-		return nil, errors.New("invalid address")
+		return nil, ErrInvalidAddress
 	}
 
 	a := NewAddress(data[0], data[1], data[2:len(data)-2])
