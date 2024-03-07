@@ -430,7 +430,7 @@ func ToCell(v any) (*cell.Cell, error) {
 			continue
 		}
 
-		if settings[0][0] == '?' {
+		if len(settings[0]) > 0 && settings[0][0] == '?' {
 			// conditional tlb parse depending on some field value of this struct
 			cond := rv.FieldByName(settings[0][1:])
 			if !cond.Bool() {
