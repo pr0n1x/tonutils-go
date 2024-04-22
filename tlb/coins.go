@@ -67,6 +67,10 @@ func (g Coins) Nano() *big.Int {
 	return g.val
 }
 
+func (g Coins) Decimals() int {
+	return g.decimals
+}
+
 func MustFromDecimal(val string, decimals int) Coins {
 	v, err := FromDecimal(val, decimals)
 	if err != nil {
