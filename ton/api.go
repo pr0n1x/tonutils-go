@@ -52,6 +52,7 @@ type APIClientWaiter = APIClientWrapped
 
 type APIClientWrapped interface {
 	Client() LiteClient
+	ProofCheckPolicy() ProofCheckPolicy
 	GetTime(ctx context.Context) (uint32, error)
 	GetLibraries(ctx context.Context, list ...[]byte) ([]*cell.Cell, error)
 	LookupBlock(ctx context.Context, workchain int32, shard int64, seqno uint32) (*BlockIDExt, error)
@@ -105,6 +106,10 @@ func NewAPIClient(client LiteClient, proofCheckPolicy ...ProofCheckPolicy) *APIC
 		client:           client,
 		proofCheckPolicy: policy,
 	}
+}
+
+func (c *APIClient) ProofCheckPolicy() ProofCheckPolicy {
+	return c.proofCheckPolicy
 }
 
 // SetTrustedBlock - set starting point to verify master block proofs chain
