@@ -99,7 +99,7 @@ func loadFromCell(v any, slice *cell.Slice, skipProofBranches, skipMagic bool) e
 
 			has, err := loader.LoadBoolBit()
 			if err != nil {
-				return fmt.Errorf("failed to load maybe for %s, err: %w", structField.Name, err)
+				return fmt.Errorf("failed to load 'maybe' for field '%s', err: %w", structField.Name, err)
 			}
 
 			if !has {
@@ -131,7 +131,7 @@ func loadFromCell(v any, slice *cell.Slice, skipProofBranches, skipMagic bool) e
 
 			isSecond, err := loader.LoadBoolBit()
 			if err != nil {
-				return fmt.Errorf("failed to load maybe for %s, err: %w", structField.Name, err)
+				return fmt.Errorf("failed to load 'either' for field '%s', err: %w", structField.Name, err)
 			}
 			eitherSelections[structField.Name] = isSecond
 			if !isSecond {
