@@ -67,8 +67,9 @@ func loadFromCell(v any, slice *cell.Slice, skipProofBranches, skipMagic bool) e
 	}
 
 	eitherSelections := make(map[string]bool)
+	fieldsNumber := rv.NumField()
 
-	for i := 0; i < rv.NumField(); i++ {
+	for i := 0; i < fieldsNumber; i++ {
 		loader := slice
 		thisStruct := rv.Type()
 		structField := thisStruct.Field(i)
@@ -99,12 +100,17 @@ func loadFromCell(v any, slice *cell.Slice, skipProofBranches, skipMagic bool) e
 
 			has, err := loader.LoadBoolBit()
 			if err != nil {
-				return fmt.Errorf("failed to load 'maybe' for field '%s', err: %w", structField.Name, err)
+				if fieldsNumber-i > 1 || !strings.Contains(err.Error(), "not enough data in reader, need 1, has 0") {
+					return fmt.Errorf("failed to load bit 'maybe' for field '%s', err: %w", structField.Name, err)
+				} else {
+					// if this field is last and 'maybe-bit' is not exist - it's ok
+					has = false
+				}
 			}
-
 			if !has {
 				continue
 			}
+
 			settings = settings[1:]
 		}
 
@@ -131,7 +137,12 @@ func loadFromCell(v any, slice *cell.Slice, skipProofBranches, skipMagic bool) e
 
 			isSecond, err := loader.LoadBoolBit()
 			if err != nil {
-				return fmt.Errorf("failed to load 'either' for field '%s', err: %w", structField.Name, err)
+				if fieldsNumber-i > 1 || !strings.Contains(err.Error(), "not enough data in reader, need 1, has 0") {
+					return fmt.Errorf("failed to load bit 'either' for field '%s', err: %w", structField.Name, err)
+				} else {
+					// if this field is last and 'either-bit' is not exist - it's ok
+					continue
+				}
 			}
 			eitherSelections[structField.Name] = isSecond
 			if !isSecond {
